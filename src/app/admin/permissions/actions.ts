@@ -50,7 +50,6 @@ export async function changeListingStatus(formData: FormData) {
     .update({
       listing_status: status,
       listing_status_note: note || null,
-      is_published: false,
     })
     .eq("id", id);
 
