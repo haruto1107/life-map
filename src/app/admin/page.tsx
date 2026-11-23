@@ -1,4 +1,4 @@
-
+import { logout } from "./actions";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -126,20 +126,20 @@ export default async function AdminPage() {
             ADMIN
           </span>
 
-          <form action="/admin/logout" method="post">
-            <button
-              type="submit"
-              style={{
-                padding: "9px 16px",
-                border: "1px solid #d5dce8",
-                borderRadius: "9px",
-                background: "#fff",
-                cursor: "pointer",
-              }}
-            >
-              ログアウト
-            </button>
-          </form>
+         <form action={logout}>
+  <button
+    type="submit"
+    style={{
+      padding: "9px 16px",
+      border: "1px solid #d5dce8",
+      borderRadius: "9px",
+      background: "#fff",
+      cursor: "pointer",
+    }}
+  >
+    ログアウト
+  </button>
+</form>
         </div>
       </header>
 
