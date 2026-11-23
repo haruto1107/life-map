@@ -1,4 +1,3 @@
-
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { logout } from "./actions";
@@ -18,10 +17,19 @@ const menus = [
   ["⚙️", "システム設定", "サービス全体の設定", "/admin/settings"],
 ];
 
+const cardStyle = {
+  background: "#fff",
+  border: "1px solid #e5eaf2",
+  borderRadius: "14px",
+  padding: "20px",
+};
+
 export default async function AdminPage() {
   const supabase = await createClient();
 
-  const { data, error: authError } = await supabase.auth.getClaims();
+  // 管理者認証
+  const { data, error: authError } =
+    await supabase.auth.getClaims();
 
   if (authError || !data?.claims) {
     redirect("/login");
@@ -39,9 +47,15 @@ export default async function AdminPage() {
     redirect("/");
   }
 
+  // ダッシュボード情報を取得
   const [
     stores,
-    pendingStores,
+    inquiryPending,
+    approved,
+    suspended,
+    published,
+    googleConnected,
+    googleErrors,
     crowd,
     inventory,
     logs,
@@ -50,18 +64,54 @@ export default async function AdminPage() {
       count: "exact",
       head: true,
     }),
+
     supabase.from("stores").select("id", {
       count: "exact",
       head: true,
-    }).eq("is_published", false),
+    }).eq("listing_status", "inquiry_pending"),
+
+    supabase.from("stores").select("id", {
+      count: "exact",
+      head: true,
+    }).eq("listing_status", "approved"),
+
+    supabase.from("stores").select("id", {
+      count: "exact",
+      head: true,
+    }).eq("listing_status", "suspended"),
+
+    supabase.from("stores").select("id", {
+      count: "exact",
+      head: true,
+    })
+      .eq("listing_status", "approved")
+      .eq("is_published", true)
+      .eq("is_active", true),
+
+    supabase.from("integration_connections").select("id", {
+      count: "exact",
+      head: true,
+    })
+      .eq("provider", "google_places")
+      .eq("connection_status", "connected"),
+
+    supabase.from("sync_jobs").select("id", {
+      count: "exact",
+      head: true,
+    })
+      .eq("provider", "google_places")
+      .eq("status", "failed"),
+
     supabase.from("store_status").select("store_id", {
       count: "exact",
       head: true,
     }),
+
     supabase.from("product_inventory").select("product_id", {
       count: "exact",
       head: true,
     }),
+
     supabase.from("audit_logs")
       .select("id, action, resource_type, outcome, created_at")
       .order("created_at", { ascending: false })
@@ -71,32 +121,65 @@ export default async function AdminPage() {
   const metrics = [
     {
       label: "登録店舗数",
-      value: stores.error ? null : stores.count,
-      description: "データベース上の店舗数",
+      value: stores.count,
+      error: stores.error,
+      description: "データベース上の全店舗",
     },
     {
-      label: "掲載未公開店舗",
-      value: pendingStores.error ? null : pendingStores.count,
-      description: "is_published = false",
+      label: "掲載申請中",
+      value: inquiryPending.count,
+      error: inquiryPending.error,
+      description: "問い合わせ・承認待ち",
+    },
+    {
+      label: "掲載承認済み",
+      value: approved.count,
+      error: approved.error,
+      description: "掲載許可を取得した店舗",
+    },
+    {
+      label: "公開中の店舗",
+      value: published.count,
+      error: published.error,
+      description: "現在一般公開されている店舗",
+    },
+    {
+      label: "掲載停止",
+      value: suspended.count,
+      error: suspended.error,
+      description: "掲載を停止している店舗",
+    },
+    {
+      label: "Google接続数",
+      value: googleConnected.count,
+      error: googleConnected.error,
+      description: "Google連携済み接続",
+    },
+    {
+      label: "Google同期エラー",
+      value: googleErrors.count,
+      error: googleErrors.error,
+      description: "失敗した同期ジョブ",
     },
     {
       label: "混雑情報登録数",
-      value: crowd.error ? null : crowd.count,
+      value: crowd.count,
+      error: crowd.error,
       description: "混雑状況の登録件数",
     },
     {
       label: "在庫情報登録数",
-      value: inventory.error ? null : inventory.count,
-      description: "在庫情報の登録件数",
+      value: inventory.count,
+      error: inventory.error,
+      description: "商品在庫の登録件数",
     },
   ];
 
   const hasError =
-    stores.error ||
-    pendingStores.error ||
-    crowd.error ||
-    inventory.error ||
+    metrics.some((item) => item.error) ||
     logs.error;
+
+  const recentLogs = logs.data ?? [];
 
   return (
     <main style={{
@@ -115,13 +198,22 @@ export default async function AdminPage() {
         gap: "16px",
       }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: "26px" }}>LIFE MAP</h1>
-          <p style={{ margin: "5px 0 0", color: "#64748b" }}>
+          <h1 style={{ margin: 0, fontSize: "26px" }}>
+            LIFE MAP
+          </h1>
+          <p style={{
+            margin: "5px 0 0",
+            color: "#64748b",
+          }}>
             運営管理システム
           </p>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "12px",
+        }}>
           <span style={{
             background: "#e6edfa",
             color: "#45689f",
@@ -152,10 +244,17 @@ export default async function AdminPage() {
         margin: "0 auto",
         padding: "36px 20px",
       }}>
-        <h2 style={{ fontSize: "24px", marginBottom: "8px" }}>
+        <h2 style={{
+          fontSize: "24px",
+          marginBottom: "8px",
+        }}>
           ダッシュボード
         </h2>
-        <p style={{ color: "#64748b", marginBottom: "28px" }}>
+
+        <p style={{
+          color: "#64748b",
+          marginBottom: "28px",
+        }}>
           LIFE MAPの運営状況
         </p>
 
@@ -174,17 +273,13 @@ export default async function AdminPage() {
 
         <section style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
+          gridTemplateColumns:
+            "repeat(auto-fit, minmax(210px, 1fr))",
           gap: "16px",
           marginBottom: "36px",
         }}>
           {metrics.map((item) => (
-            <article key={item.label} style={{
-              background: "#fff",
-              border: "1px solid #e5eaf2",
-              borderRadius: "14px",
-              padding: "22px",
-            }}>
+            <article key={item.label} style={cardStyle}>
               <p style={{
                 color: "#64748b",
                 fontSize: "14px",
@@ -192,13 +287,17 @@ export default async function AdminPage() {
               }}>
                 {item.label}
               </p>
+
               <p style={{
                 fontSize: "32px",
                 fontWeight: "bold",
                 margin: "12px 0",
               }}>
-                {item.value === null ? "取得失敗" : item.value ?? "—"}
+                {item.error
+                  ? "取得失敗"
+                  : item.value ?? 0}
               </p>
+
               <p style={{
                 color: "#94a3b8",
                 fontSize: "12px",
@@ -211,19 +310,18 @@ export default async function AdminPage() {
         </section>
 
         <section style={{
-          background: "#fff",
-          border: "1px solid #e5eaf2",
-          borderRadius: "14px",
-          padding: "24px",
+          ...cardStyle,
           marginBottom: "36px",
         }}>
-          <h3 style={{ marginTop: 0 }}>最近の操作履歴</h3>
+          <h3 style={{ marginTop: 0 }}>
+            最近の操作履歴
+          </h3>
 
           {logs.error ? (
             <p style={{ color: "#b42318" }}>
               操作履歴を取得できなかったよ。
             </p>
-          ) : logs.data.length === 0 ? (
+          ) : recentLogs.length === 0 ? (
             <p style={{ color: "#64748b" }}>
               まだ操作履歴はないよ。
             </p>
@@ -242,19 +340,39 @@ export default async function AdminPage() {
                     <th style={{ padding: "12px" }}>結果</th>
                   </tr>
                 </thead>
+
                 <tbody>
-                  {logs.data.map((log) => (
+                  {recentLogs.map((log) => (
                     <tr key={log.id}>
-                      <td style={{ padding: "12px", borderTop: "1px solid #e5eaf2" }}>
-                        {new Date(log.created_at).toLocaleString("ja-JP")}
+                      <td style={{
+                        padding: "12px",
+                        borderTop: "1px solid #e5eaf2",
+                        whiteSpace: "nowrap",
+                      }}>
+                        {new Date(log.created_at).toLocaleString(
+                          "ja-JP",
+                          { timeZone: "Asia/Tokyo" }
+                        )}
                       </td>
-                      <td style={{ padding: "12px", borderTop: "1px solid #e5eaf2" }}>
+
+                      <td style={{
+                        padding: "12px",
+                        borderTop: "1px solid #e5eaf2",
+                      }}>
                         {log.action}
                       </td>
-                      <td style={{ padding: "12px", borderTop: "1px solid #e5eaf2" }}>
+
+                      <td style={{
+                        padding: "12px",
+                        borderTop: "1px solid #e5eaf2",
+                      }}>
                         {log.resource_type}
                       </td>
-                      <td style={{ padding: "12px", borderTop: "1px solid #e5eaf2" }}>
+
+                      <td style={{
+                        padding: "12px",
+                        borderTop: "1px solid #e5eaf2",
+                      }}>
                         {log.outcome}
                       </td>
                     </tr>
@@ -263,27 +381,59 @@ export default async function AdminPage() {
               </table>
             </div>
           )}
+
+          <p style={{
+            marginBottom: 0,
+            marginTop: "18px",
+            textAlign: "right",
+          }}>
+            <a href="/admin/audit" style={{
+              color: "#45689f",
+              fontSize: "13px",
+              textDecoration: "none",
+            }}>
+              すべての操作履歴を見る →
+            </a>
+          </p>
         </section>
 
         <section>
-          <h3 style={{ marginBottom: "18px" }}>管理メニュー</h3>
+          <h3 style={{ marginBottom: "18px" }}>
+            管理メニュー
+          </h3>
+
           <div style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))",
+            gridTemplateColumns:
+              "repeat(auto-fit, minmax(230px, 1fr))",
             gap: "16px",
           }}>
             {menus.map(([icon, title, description, href]) => (
-              <a key={href} href={href} style={{
-                display: "block",
-                background: "#fff",
-                border: "1px solid #e5eaf2",
-                borderRadius: "14px",
-                padding: "22px",
-              }}>
-                <div style={{ fontSize: "25px", marginBottom: "12px" }}>
+              <a
+                key={href}
+                href={href}
+                style={{
+                  display: "block",
+                  background: "#fff",
+                  border: "1px solid #e5eaf2",
+                  borderRadius: "14px",
+                  padding: "22px",
+                  textDecoration: "none",
+                  color: "#172033",
+                  transition: "border-color 0.2s",
+                }}
+              >
+                <div style={{
+                  fontSize: "25px",
+                  marginBottom: "12px",
+                }}>
                   {icon}
                 </div>
-                <h4 style={{ margin: "0 0 8px" }}>{title}</h4>
+
+                <h4 style={{ margin: "0 0 8px" }}>
+                  {title}
+                </h4>
+
                 <p style={{
                   color: "#64748b",
                   fontSize: "13px",
