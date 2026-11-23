@@ -1,21 +1,70 @@
-import { logout } from "./actions";
+
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-const menuItems = [
-  ["ダッシュボード", "全体の状況を確認"],
-  ["店舗管理", "掲載店舗の確認・編集"],
-  ["掲載許可管理", "店舗からの掲載許可を管理"],
-  ["Google連携", "Google店舗情報との連携"],
-  ["メール営業", "店舗への問い合わせメール"],
-  ["メールテンプレート", "メール本文の作成・編集"],
-  ["メール履歴", "送受信したメールの確認"],
-  ["POS連携", "POSシステムとの連携"],
-  ["アカウント管理", "運営アカウントの管理"],
-  ["操作履歴", "管理画面の操作履歴"],
-  ["システム設定", "サービス全体の設定"],
+const menus = [
+  {
+    title: "店舗管理",
+    description: "掲載店舗の検索・詳細・編集",
+    href: "/admin/stores",
+    icon: "🏪",
+  },
+  {
+    title: "掲載許可管理",
+    description: "店舗の掲載許可申請・承認・却下",
+    href: "/admin/permissions",
+    icon: "📋",
+  },
+  {
+    title: "Google連携",
+    description: "Google店舗情報の取得・更新",
+    href: "/admin/google",
+    icon: "🌐",
+  },
+  {
+    title: "メール営業",
+    description: "店舗への問い合わせ・営業メール",
+    href: "/admin/email",
+    icon: "✉️",
+  },
+  {
+    title: "メールテンプレート",
+    description: "問い合わせメールの文章管理",
+    href: "/admin/email/templates",
+    icon: "📝",
+  },
+  {
+    title: "メール履歴",
+    description: "送受信したメールの確認",
+    href: "/admin/email/history",
+    icon: "📨",
+  },
+  {
+    title: "POS連携",
+    description: "各社POSシステムとの接続管理",
+    href: "/admin/pos",
+    icon: "💳",
+  },
+  {
+    title: "アカウント管理",
+    description: "運営アカウントと権限の管理",
+    href: "/admin/accounts",
+    icon: "👤",
+  },
+  {
+    title: "操作履歴",
+    description: "管理者による操作の記録",
+    href: "/admin/audit",
+    icon: "📊",
+  },
+  {
+    title: "システム設定",
+    description: "サービス全体の設定",
+    href: "/admin/settings",
+    icon: "⚙️",
+  },
 ];
 
 export default async function AdminPage() {
@@ -27,7 +76,8 @@ export default async function AdminPage() {
     redirect("/login");
   }
 
-  const appMetadata = data.claims.app_metadata as
+  const claims = data.claims as Record<string, unknown>;
+  const appMetadata = claims.app_metadata as
     | { role?: string }
     | undefined;
 
@@ -40,112 +90,153 @@ export default async function AdminPage() {
       style={{
         minHeight: "100vh",
         background: "#f5f7fb",
-        padding: "32px 20px",
         color: "#172033",
       }}
     >
-      <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
-        <header
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: "16px",
-            marginBottom: "32px",
-          }}
-        >
-          <div>
-            <h1 style={{ fontSize: "30px", margin: 0 }}>LIFE MAP</h1>
-            <p style={{ color: "#64748b", marginTop: "6px" }}>
-              運営管理画面
-            </p>
-          </div>
+      <header
+        style={{
+          background: "#fff",
+          borderBottom: "1px solid #e5eaf2",
+          padding: "20px 5%",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: "16px",
+        }}
+      >
+        <div>
+          <h1 style={{ margin: 0, fontSize: "26px" }}>LIFE MAP</h1>
+          <p style={{ margin: "5px 0 0", color: "#64748b" }}>
+            運営管理システム
+          </p>
+        </div>
 
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <span
             style={{
               background: "#e6edfa",
               color: "#45689f",
               padding: "8px 14px",
               borderRadius: "20px",
-              fontSize: "13px",
+              fontSize: "12px",
+              fontWeight: "bold",
             }}
           >
             ADMIN
-            <form action={logout}>
-  <button
-    type="submit"
-    style={{
-      padding: "9px 16px",
-      border: "1px solid #d5dce8",
-      borderRadius: "9px",
-      background: "#ffffff",
-      color: "#334155",
-      cursor: "pointer",
-    }}
-  >
-    ログアウト
-  </button>
-</form>
           </span>
-        </header>
 
-        <section
-          style={{
-            background: "#ffffff",
-            padding: "24px",
-            borderRadius: "16px",
-            marginBottom: "24px",
-          }}
-        >
-          <h2 style={{ marginTop: 0 }}>ダッシュボード</h2>
-          <p style={{ color: "#64748b", marginBottom: 0 }}>
+          <form action="/admin/logout" method="post">
+            <button
+              type="submit"
+              style={{
+                padding: "9px 16px",
+                border: "1px solid #d5dce8",
+                borderRadius: "9px",
+                background: "#fff",
+                cursor: "pointer",
+              }}
+            >
+              ログアウト
+            </button>
+          </form>
+        </div>
+      </header>
+
+      <div
+        style={{
+          maxWidth: "1200px",
+          margin: "0 auto",
+          padding: "36px 20px",
+        }}
+      >
+        <section style={{ marginBottom: "32px" }}>
+          <h2 style={{ fontSize: "24px", marginBottom: "8px" }}>
+            ダッシュボード
+          </h2>
+          <p style={{ color: "#64748b", margin: 0 }}>
             LIFE MAPの運営状況を管理する画面です。
           </p>
         </section>
 
+        <section
+          style={{
+            background: "#fff",
+            border: "1px solid #e5eaf2",
+            borderRadius: "14px",
+            padding: "24px",
+            marginBottom: "32px",
+          }}
+        >
+          <h3 style={{ marginTop: 0 }}>運営状況</h3>
+          <p style={{ color: "#64748b", marginBottom: 0 }}>
+            データベースとの接続後、店舗数・掲載許可待ち・混雑情報・
+            在庫情報をここに表示します。
+          </p>
+          <span
+            style={{
+              display: "inline-block",
+              marginTop: "16px",
+              padding: "7px 12px",
+              borderRadius: "7px",
+              background: "#fff4db",
+              color: "#946200",
+              fontSize: "12px",
+            }}
+          >
+            データ連携準備中
+          </span>
+        </section>
+
         <section>
-          <h2 style={{ fontSize: "20px", marginBottom: "16px" }}>
-            管理メニュー
-          </h2>
+          <h3 style={{ marginBottom: "18px" }}>管理メニュー</h3>
 
           <div
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))",
-              gap: "14px",
+              gap: "16px",
             }}
           >
-            {menuItems.map(([title, description]) => (
-              <div
-                key={title}
+            {menus.map((menu) => (
+              <a
+                key={menu.href}
+                href={menu.href}
                 style={{
-                  background: "#ffffff",
-                  padding: "22px",
-                  borderRadius: "14px",
+                  display: "block",
+                  background: "#fff",
                   border: "1px solid #e5eaf2",
+                  borderRadius: "14px",
+                  padding: "22px",
+                  transition: "border-color 0.2s",
                 }}
               >
-                <h3 style={{ margin: "0 0 8px", fontSize: "16px" }}>
-                  {title}
-                </h3>
+                <div style={{ fontSize: "26px", marginBottom: "12px" }}>
+                  {menu.icon}
+                </div>
+                <h4 style={{ margin: "0 0 8px", fontSize: "16px" }}>
+                  {menu.title}
+                </h4>
                 <p
                   style={{
                     margin: 0,
-                    color: "#64748b",
                     fontSize: "13px",
+                    color: "#64748b",
+                    lineHeight: 1.6,
                   }}
                 >
-                  {description}
+                  {menu.description}
                 </p>
-              </div>
+              </a>
             ))}
           </div>
         </section>
 
         <footer
           style={{
-            marginTop: "40px",
+            marginTop: "48px",
+            paddingTop: "20px",
+            borderTop: "1px solid #e5eaf2",
             textAlign: "center",
             color: "#94a3b8",
             fontSize: "12px",
