@@ -1,4 +1,3 @@
-
 import Link from "next/link";
 import { logout } from "./actions";
 
@@ -6,10 +5,11 @@ const menus = [
   { href: "/admin", icon: "⌂", title: "ダッシュボード", description: "運営状況の確認" },
   { href: "/admin/stores", icon: "▦", title: "店舗管理", description: "店舗の登録・編集" },
   { href: "/admin/permissions", icon: "✓", title: "掲載許可管理", description: "掲載申請の確認" },
+  { href: "/admin/google", icon: "G", title: "Google連携", description: "Google情報の接続状況" },
+  { href: "/admin/email", icon: "✉", title: "メール営業", description: "テンプレート・送信下書き" },
+  { href: "/admin/accounts", icon: "♙", title: "アカウント管理", description: "管理者・スタッフ" },
+  { href: "/admin/pos", icon: "▣", title: "POS連携", description: "POS接続状況" },
   { href: "/admin/audit", icon: "≡", title: "操作履歴", description: "管理者の操作記録" },
-  { href: "/admin/google", icon: "G", title: "Google連携", description: "店舗情報の同期" },
-  { href: "/admin/email", icon: "✉", title: "メール営業", description: "店舗への問い合わせ" },
-  { href: "/admin/accounts", icon: "♙", title: "アカウント管理", description: "運営アカウント" },
   { href: "/admin/settings", icon: "⚙", title: "システム設定", description: "サービス全体の設定" },
 ];
 
@@ -31,14 +31,16 @@ export default function AdminShell({
           </span>
         </Link>
 
-        <div className="sidebar-label">MENU</div>
+        <div className="sidebar-label">WORKSPACE</div>
 
         <nav className="admin-nav">
           {menus.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className={`admin-nav-item ${active === item.href ? "active" : ""}`}
+              className={`admin-nav-item ${
+                active === item.href ? "active" : ""
+              }`}
             >
               <span className="nav-icon">{item.icon}</span>
               <span className="nav-copy">
@@ -61,6 +63,7 @@ export default function AdminShell({
             <span className="topbar-caption">LIFE MAP / ADMIN</span>
             <strong>運営管理システム</strong>
           </div>
+
           <div className="topbar-actions">
             <span className="admin-role">ADMIN</span>
             <form action={logout}>
@@ -74,7 +77,7 @@ export default function AdminShell({
         <main className="admin-content">{children}</main>
 
         <footer className="admin-footer">
-          LIFE MAP Administration System · Copyright © 2026 LUMINO.
+          LIFE MAP Administration System · © 2026 LUMINO
         </footer>
       </div>
     </div>
