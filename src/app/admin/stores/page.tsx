@@ -28,7 +28,7 @@ const statusLabels: Record<string, string> = {
 export default async function StoresPage({
   searchParams,
 }: {
-  searchParams?: Promise<SearchParams> | SearchParams;
+  searchParams?: Promise<SearchParams>;
 }) {
   const params = await searchParams;
   const query = (params?.q ?? "").trim().toLowerCase();
