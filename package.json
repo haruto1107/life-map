@@ -15,6 +15,13 @@
     "next": "latest",
     "react": "latest",
     "react-dom": "latest"
+    "@opennextjs/cloudflare": "latest",
+  "wrangler": "latest",
+  "@types/node": "latest",
+  "@types/react": "latest",
+  "eslint": "latest",
+  "eslint-config-next": "latest",
+  "typescript": "latest"
   },
   "devDependencies": {
     "@types/node": "latest",
