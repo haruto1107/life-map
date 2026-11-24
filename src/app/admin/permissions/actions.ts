@@ -1,47 +1,23 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-
-async function requireAdmin() {
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.getClaims();
-
-  if (error || !data?.claims) redirect("/login");
-
-  const claims = data.claims as {
-    app_metadata?: {
-      role?: string;
-      platform_role?: string;
-    };
-  };
-
-  if (
-    claims.app_metadata?.role !== "admin" ||
-    claims.app_metadata?.platform_role !== "admin"
-  ) {
-    redirect("/");
-  }
-
-  return supabase;
-}
+import { requirePlatformAdmin } from "@/lib/admin";
 
 export async function changeListingStatus(formData: FormData) {
-  const supabase = await requireAdmin();
+  const { supabase } = await requirePlatformAdmin();
 
-  const id = String(formData.get("id") || "");
-  const status = String(formData.get("status") || "");
-  const note = String(formData.get("note") || "").trim();
+  const id = String(formData.get("id") ?? "").trim();
+  const status = String(formData.get("status") ?? "");
+  const note = String(formData.get("note") ?? "").trim();
 
-  const allowedStatuses = [
+  const allowed = [
     "approved",
     "rejected",
     "suspended",
     "inquiry_pending",
   ];
 
-  if (!id || !allowedStatuses.includes(status)) {
+  if (!id || !allowed.includes(status)) {
     throw new Error("入力内容が正しくありません。");
   }
 
@@ -55,7 +31,8 @@ export async function changeListingStatus(formData: FormData) {
 
   if (error) throw new Error(error.message);
 
-  revalidatePath("/admin/permissions");
-  revalidatePath("/admin/stores");
   revalidatePath("/admin");
+  revalidatePath("/admin/stores");
+  revalidatePath("/admin/permissions");
+  revalidatePath("/admin/audit");
 }
