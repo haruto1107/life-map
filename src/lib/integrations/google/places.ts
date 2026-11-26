@@ -1,3 +1,4 @@
+
 export type GooglePlaceCandidate = {
   placeId: string;
   name: string;
@@ -6,10 +7,9 @@ export type GooglePlaceCandidate = {
 };
 
 export async function searchGooglePlaces(
-  query: string
+  query: string,
+  apiKey: string
 ): Promise<GooglePlaceCandidate[]> {
-  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
-
   if (!apiKey) {
     throw new Error("Google Maps API key is missing.");
   }
@@ -46,12 +46,10 @@ export async function searchGooglePlaces(
 
   const data = await response.json();
 
-  return (data.places ?? []).map(
-    (place: any) => ({
-      placeId: place.id,
-      name: place.displayName?.text ?? "",
-      address: place.formattedAddress ?? "",
-      googleMapsUrl: place.googleMapsUri ?? null,
-    })
-  );
+  return (data.places ?? []).map((place: any) => ({
+    placeId: place.id,
+    name: place.displayName?.text ?? "",
+    address: place.formattedAddress ?? "",
+    googleMapsUrl: place.googleMapsUri ?? null,
+  }));
 }
