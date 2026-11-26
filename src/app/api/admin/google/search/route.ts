@@ -72,14 +72,15 @@ export async function POST(request: Request) {
       places,
     });
 
-} catch (error) {
-  console.error("[Google Places Search Error]", {
-    name: error instanceof Error ? error.name : "Unknown",
-    message: error instanceof Error ? error.message : String(error),
-  });
+}   } catch (error) {
+    console.error("[Google Places Search Error]", {
+      name: error instanceof Error ? error.name : "Unknown",
+      message: error instanceof Error ? error.message : String(error),
+    });
 
-  return Response.json(
-    { error: "店舗検索に失敗しました。" },
-    { status: 500 }
-  );
+    return Response.json(
+      { error: "店舗検索に失敗しました。" },
+      { status: 500 }
+    );
+  }
 }
