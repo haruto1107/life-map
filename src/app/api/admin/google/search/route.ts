@@ -1,6 +1,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { searchGooglePlaces } from "@/lib/integrations/google/places";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 export const dynamic = "force-dynamic";
 
@@ -61,9 +62,21 @@ export async function POST(request: Request) {
       );
     }
 
+    // Cloudflare WorkerのSecretを取得
+    const { env } = getCloudflareContext();
+
+    const apiKey = (
+      env as { GOOGLE_MAPS_API_KEY?: string }
+    ).GOOGLE_MAPS_API_KEY;
+
+    if (!apiKey) {
+      throw new Error("Google Maps API key is missing.");
+    }
+
     // Google Places APIで店舗検索
     const places = await searchGooglePlaces(
-      body.query.trim()
+      body.query.trim(),
+      apiKey
     );
 
     return Response.json({
