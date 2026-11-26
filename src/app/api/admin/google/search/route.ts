@@ -61,7 +61,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Google Places API
+    // Google Places APIで店舗検索
     const places = await searchGooglePlaces(
       body.query.trim()
     );
@@ -72,10 +72,13 @@ export async function POST(request: Request) {
       places,
     });
 
-}   } catch (error) {
+  } catch (error) {
+    // エラーの詳細をサーバーログに記録
     console.error("[Google Places Search Error]", {
       name: error instanceof Error ? error.name : "Unknown",
-      message: error instanceof Error ? error.message : String(error),
+      message: error instanceof Error
+        ? error.message
+        : String(error),
     });
 
     return Response.json(
